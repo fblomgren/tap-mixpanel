@@ -262,19 +262,18 @@ def sync_endpoint(client, #pylint: disable=too-many-branches
                     params['session_id'] = session_id
                     params['page'] = page
 
-                # querystring: Squash query params into string and replace [parent_id]
-                querystring = '&'.join(['%s=%s' % (key, value) for (key, value) \
-                    in params.items()]).replace(
-                        '[parent_id]', str(parent_id))
-
                 if stream_name == 'export' and export_events:
                     event = json.dumps([export_events] if isinstance(export_events, str) else export_events)
                     url_encoded = urllib.parse.quote(event)
-                    querystring += f'&event={url_encoded}'
+                    params['event'] = url_encoded
 
                 if stream_name == 'export' and where:
-                    url_encoded = urllib.parse.quote(where)
-                    querystring += f'&where={url_encoded}'
+                    params['where'] = urllib.parse.quote(where)
+
+                # querystring: Squash query params into string and replace [parent_id]
+                querystring = '&'.join([f'{key}={value}' for (key, value) \
+                    in params.items()]).replace(
+                        '[parent_id]', str(parent_id))
 
                 full_url = '{}/{}{}'.format(
                     url,
