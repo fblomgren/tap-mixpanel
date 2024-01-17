@@ -2,6 +2,7 @@ import datetime
 import pytz
 import singer
 from singer.utils import strftime
+from singer import _transform_datetime, UNIX_MILLISECONDS_INTEGER_DATETIME_PARSING
 
 
 LOGGER = singer.get_logger()
@@ -49,6 +50,12 @@ def transform_event_times(record, project_timezone):
     # 'normalize' accounts for daylight savings time
     new_time_utc_str = strftime(timezone.normalize(new_time).astimezone(pytz.utc))
     new_record['time'] = new_time_utc_str
+
+    # Other timestamps need to be processed as wel
+    # Since singer.Transformer can only handle one date-time format
+    mp_processing_time_ms = int(record.get('mp_processing_time_ms'))
+    new_processing_time = _transform_datetime(mp_processing_time_ms, UNIX_MILLISECONDS_INTEGER_DATETIME_PARSING)
+    new_record['mp_processing_time_ms'] = new_processing_time
 
     return new_record
 
