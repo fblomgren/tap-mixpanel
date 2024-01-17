@@ -9,7 +9,10 @@
 #        and setting the state
 #   params: Query, sort, and other endpoint specific parameters; default = {}
 #   data_key: JSON element containing the results list for the endpoint
-#   bookmark_query_field_from/to: From date-time field used for filtering the query
+#   bookmark_query_field_from/to: Project timezone YYYY-MM-DD date format fields used for filtering
+#       the query, with attribution window
+#   bookmark_where_query_field: Milliseconds since UTC field used for filtering in the where query,
+#       if where_filter is supported, without attribution window
 #   api_method: GET or POST
 #   parent_path, parent_id_field: Used for listing parent IDs and looping through each
 #   date_dictionary: True or False, to transform date keys to list-array
@@ -24,9 +27,10 @@ STREAMS = {
         'api_method': 'GET',
         'key_properties': ['event', 'time', 'distinct_id', 'mp_reserved_insert_id'],
         'replication_method': 'INCREMENTAL',
-        'replication_keys': ['time'],
+        'replication_keys': ['mp_processing_time_ms'],
         'bookmark_query_field_from': 'from_date',
         'bookmark_query_field_to': 'to_date',
+        'bookmark_where_query_field': 'mp_processing_time_ms',
         'date_dictionary': False,
         'pagination': False,
         'where_filter': True,
