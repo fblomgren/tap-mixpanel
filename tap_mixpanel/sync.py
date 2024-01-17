@@ -147,6 +147,7 @@ def sync_endpoint(client, #pylint: disable=too-many-branches
     id_fields = endpoint_config.get('key_properties')
     date_dictionary = endpoint_config.get('date_dictionary', False)
     pagination = endpoint_config.get('pagination', False)
+    where_filter_supported = endpoint_config.get('where_filter', False)
 
     # Get the latest bookmark for the stream and set the last_integer/datetime
     last_datetime = None
@@ -267,7 +268,7 @@ def sync_endpoint(client, #pylint: disable=too-many-branches
                     url_encoded = urllib.parse.quote(event)
                     params['event'] = url_encoded
 
-                if stream_name == 'export' and where:
+                if where_filter_supported and where:
                     params['where'] = urllib.parse.quote(where)
 
                 # querystring: Squash query params into string and replace [parent_id]

@@ -14,6 +14,7 @@
 #   parent_path, parent_id_field: Used for listing parent IDs and looping through each
 #   date_dictionary: True or False, to transform date keys to list-array
 #   pagination: True or False, if endpoint supports pagination looping
+#   where_filter: True or False, if endpoint supports a where filter Segmentation Expression
 
 STREAMS = {
     'export': {
@@ -28,6 +29,7 @@ STREAMS = {
         'bookmark_query_field_to': 'to_date',
         'date_dictionary': False,
         'pagination': False,
+        'where_filter': True,
         'params': {}
     },
 
@@ -40,6 +42,7 @@ STREAMS = {
         'replication_method': 'FULL_TABLE',
         'date_dictionary': False,
         'pagination': True,
+        'where_filter': True,
         'params': {}
     },
 
@@ -57,6 +60,7 @@ STREAMS = {
         'bookmark_query_field_to': 'to_date',
         'date_dictionary': True,
         'pagination': False,
+        'where_filter': True,
         'params': {
             'funnel_id': '[parent_id]',
             'unit': 'day'
@@ -72,6 +76,7 @@ STREAMS = {
         'replication_method': 'FULL_TABLE',
         'date_dictionary': False,
         'pagination': False,
+        'where_filter': False,
         'params': {}
     },
 
@@ -86,6 +91,7 @@ STREAMS = {
         'replication_method': 'FULL_TABLE',
         'date_dictionary': False,
         'pagination': True,
+        'where_filter': True,
         'params': {
             'filter_by_cohort': '{"id": [parent_id]}'
         }
@@ -103,6 +109,7 @@ STREAMS = {
         'bookmark_query_field_to': 'to_date',
         'date_dictionary': True,
         'pagination': False,
+        'where_filter': False,
         'params': {
             'unit': 'day'
         }
@@ -119,6 +126,7 @@ STREAMS = {
         'bookmark_query_field_to': 'to_date',
         'date_dictionary': False,
         'pagination': False,
+        'where_filter': False,
         'params': {}
     }
 
