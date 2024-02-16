@@ -29,10 +29,10 @@ This tap:
 
 **[export](https://developer.mixpanel.com/docs/exporting-raw-data#section-export-api-reference)**
 - Endpoint: https://data.mixpanel.com/api/2.0/export
-- Primary key fields: `event`, `time`, `distinct_id`
+- Primary key fields: `event`, `time`, `distinct_id`, `mp_reserved_insert_id`
 - Replication strategy: INCREMENTAL (query filtered)
-  - Bookmark: `time`
-  - Bookmark query field: `from_date`, `to_date`
+  - Bookmark: `mp_processing_time_ms`
+  - Bookmark query field: `where` query on `mp_processing_time_ms` field and also required `from_date`, `to_date` on `time` field with `attribution_window`
 - Transformations: De-nest `properties` to root-level, re-name properties with leading `$...` to `mp_reserved_...`, convert datetimes from project timezone to UTC.
 - Optional parameters
   - `export_events` to export only certain events
