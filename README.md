@@ -43,6 +43,8 @@ This tap:
 - Primary key fields:  `distinct_id`
 - Replication strategy: FULL_TABLE (all records, every load)
 - Transformations: De-nest `$properties` to root-level, re-name properties with leading `$...` to `mp_reserved_...`.
+- Optional parameters
+  - `where` to filter with a [segmentation expression](https://developer.mixpanel.com/reference/segmentation-expressions)
 
 **[funnels](https://developer.mixpanel.com/docs/data-export-api#section-funnels)**
 - Endpoint 1 (name, id): https://data.mixpanel.com/api/2.0/export
@@ -55,6 +57,8 @@ This tap:
   - Bookmark: `date`
   - Bookmark query field: `from_date`, `to_date`
 - Transformations: Combine Endpoint 1 & 2 results, convert `date` keys to list to `results` list-array.
+- Optional parameters
+  - `where` to filter with a [segmentation expression](https://developer.mixpanel.com/reference/segmentation-expressions)
 
 **[revenue](https://developer.mixpanel.com/docs/data-export-api#section-hr-span-style-font-family-courier-revenue-span)**
 - Endpoint: https://mixpanel.com/api/2.0/engage/revenue
@@ -85,6 +89,8 @@ This tap:
   - `filter_by_cohort`: {cohort_id} (from `cohorts` endpoint)
 - Replication strategy: FULL_TABLE
 - Transformations: For each `cohort_id` in `cohorts` endpoint, query `engage` endpoint with `filter_by_cohort` parameter to create list of `distinct_id` for each `cohort_id`.
+- Optional parameters
+  - `where` to filter with a [segmentation expression](https://developer.mixpanel.com/reference/segmentation-expressions)
 
 
 ## Authentication
@@ -125,14 +131,21 @@ More details may be found in the [Mixpanel API Authentication](https://developer
         "user_agent": "tap-mixpanel <api_user_email@your_company.com>"
     }
     ```
-    
+
     If you want to export only certain events from the [Raw export API](https://developer.mixpanel.com/reference/export)
     then add `export_events` option to the `config.json` and list the required event names:
-    
+
     ```bash
    "export_events": ["event_one", "event_two"]
    ```
-    
+
+    If you want to filter the export using an [segmentation expression](https://developer.mixpanel.com/reference/segmentation-expressions)
+    for supported stream (`export`, `engage`, `funnels` & `cohort_members`) then add `where` option to the `config.json` with the expression:
+
+    ```bash
+   "where": "defined(properties[\\"property_one\\"])"
+   ```
+
     Optionally, also create a `state.json` file. `currently_syncing` is an optional attribute used for identifying the last object to be synced in case the job is interrupted mid-stream. The next run would begin where the last job left off.
 
     ```json
@@ -160,7 +173,7 @@ More details may be found in the [Mixpanel API Authentication](https://developer
     ```bash
     > tap-mixpanel --config tap_config.json --catalog catalog.json
     ```
-   
+
     Messages are written to standard output following the Singer specification.
     The resultant stream of JSON data can be consumed by a Singer target.
     To load to json files to verify outputs:
