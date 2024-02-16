@@ -184,20 +184,23 @@ def sync_endpoint(client, #pylint: disable=too-many-branches
 
         last_dttm = strptime_to_utc(last_datetime)
         delta_days = (now_datetime - last_dttm).days
-        # When `where` query is used attribution window is applied to all date windows inside loop
+
+        # With `where` query, attribution window is instead applied to all date windows inside loop
         if delta_days <= attribution_window and not bookmark_where_query_field:
             delta_days = attribution_window
             LOGGER.info("Start bookmark less than {} day attribution window.".format(
                 attribution_window))
+            start_window = now_datetime - timedelta(days=delta_days)
         elif delta_days >= 365:
             delta_days = 365
             LOGGER.warning("WARNING: Start date or bookmark greater than 1 year maxiumum.")
             LOGGER.warning("WARNING: Setting bookmark start to 1 year ago.")
+            start_window = now_datetime - timedelta(days=delta_days)
+        else:
+            start_window = last_dttm
 
-        start_window = now_datetime - timedelta(days=delta_days)
         end_window = start_window + timedelta(days=days_interval)
         end_window = min(end_window, now_datetime)
-
     else:
         start_window = strptime_to_utc(last_datetime)
         end_window = now_datetime
