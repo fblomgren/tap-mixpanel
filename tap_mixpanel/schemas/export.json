@@ -15,6 +15,10 @@
       "type": ["null", "string"],
       "format": "date-time"
     },
+    "mp_processing_time_ms": {
+      "type": ["null", "string"],
+      "format": "date-time"
+    },
     "properties": {
       "type": ["null", "object"]
     }

@@ -67,7 +67,7 @@ def get_exception_for_error_code(error_code):
 
 def raise_for_error(response):
     if response.status_code != 400:
-        LOGGER.warn('STATUS {}: {}, REASON: {}'.format(response.status_code,
+        LOGGER.warning('STATUS {}: {}, REASON: {}'.format(response.status_code,
             response.text, response.reason))
 
     try:

@@ -9,11 +9,15 @@
 #        and setting the state
 #   params: Query, sort, and other endpoint specific parameters; default = {}
 #   data_key: JSON element containing the results list for the endpoint
-#   bookmark_query_field_from/to: From date-time field used for filtering the query
+#   bookmark_query_field_from/to: Project timezone YYYY-MM-DD date format fields used for filtering
+#       the query, with attribution window
+#   bookmark_where_query_field: Milliseconds since UTC field used for filtering in the where query,
+#       if where_filter is supported, without attribution window
 #   api_method: GET or POST
 #   parent_path, parent_id_field: Used for listing parent IDs and looping through each
 #   date_dictionary: True or False, to transform date keys to list-array
 #   pagination: True or False, if endpoint supports pagination looping
+#   where_filter: True or False, if endpoint supports a where filter Segmentation Expression
 
 STREAMS = {
     'export': {
@@ -21,13 +25,15 @@ STREAMS = {
         'path': 'export',
         'data_key': 'results',
         'api_method': 'GET',
-        'key_properties': ['mp_reserved_insert_id'],
+        'key_properties': ['event', 'time', 'distinct_id', 'mp_reserved_insert_id'],
         'replication_method': 'INCREMENTAL',
-        'replication_keys': ['time'],
+        'replication_keys': ['mp_processing_time_ms'],
         'bookmark_query_field_from': 'from_date',
         'bookmark_query_field_to': 'to_date',
+        'bookmark_where_query_field': 'mp_processing_time_ms',
         'date_dictionary': False,
         'pagination': False,
+        'where_filter': True,
         'params': {}
     },
 
@@ -40,6 +46,7 @@ STREAMS = {
         'replication_method': 'FULL_TABLE',
         'date_dictionary': False,
         'pagination': True,
+        'where_filter': True,
         'params': {}
     },
 
@@ -57,6 +64,7 @@ STREAMS = {
         'bookmark_query_field_to': 'to_date',
         'date_dictionary': True,
         'pagination': False,
+        'where_filter': True,
         'params': {
             'funnel_id': '[parent_id]',
             'unit': 'day'
@@ -72,6 +80,7 @@ STREAMS = {
         'replication_method': 'FULL_TABLE',
         'date_dictionary': False,
         'pagination': False,
+        'where_filter': False,
         'params': {}
     },
 
@@ -86,6 +95,7 @@ STREAMS = {
         'replication_method': 'FULL_TABLE',
         'date_dictionary': False,
         'pagination': True,
+        'where_filter': True,
         'params': {
             'filter_by_cohort': '{"id": [parent_id]}'
         }
@@ -103,6 +113,7 @@ STREAMS = {
         'bookmark_query_field_to': 'to_date',
         'date_dictionary': True,
         'pagination': False,
+        'where_filter': False,
         'params': {
             'unit': 'day'
         }
@@ -119,6 +130,7 @@ STREAMS = {
         'bookmark_query_field_to': 'to_date',
         'date_dictionary': False,
         'pagination': False,
+        'where_filter': False,
         'params': {}
     }
 

@@ -142,11 +142,18 @@ def sync_endpoint(client, #pylint: disable=too-many-branches
     parent_path = endpoint_config.get('parent_path')
     parent_id_field = endpoint_config.get('parent_id_field')
     static_params = endpoint_config.get('params', {})
+    bookmark_where_query_field = endpoint_config.get('bookmark_where_query_field')
     bookmark_query_field_from = endpoint_config.get('bookmark_query_field_from')
     bookmark_query_field_to = endpoint_config.get('bookmark_query_field_to')
     id_fields = endpoint_config.get('key_properties')
     date_dictionary = endpoint_config.get('date_dictionary', False)
     pagination = endpoint_config.get('pagination', False)
+    where_filter_supported = endpoint_config.get('where_filter', False)
+
+    if bookmark_where_query_field and not where_filter_supported:
+        bookmark_where_query_field = None
+        LOGGER.warning("WARNING: Stream {} does not support where filter.".format(stream_name))
+        LOGGER.warning("WARNING: Disabling bookmark_where_query_field.")
 
     # Get the latest bookmark for the stream and set the last_integer/datetime
     last_datetime = None
@@ -177,19 +184,23 @@ def sync_endpoint(client, #pylint: disable=too-many-branches
 
         last_dttm = strptime_to_utc(last_datetime)
         delta_days = (now_datetime - last_dttm).days
-        if delta_days <= attribution_window:
+
+        # With `where` query, attribution window is instead applied to all date windows inside loop
+        if delta_days <= attribution_window and not bookmark_where_query_field:
             delta_days = attribution_window
             LOGGER.info("Start bookmark less than {} day attribution window.".format(
                 attribution_window))
+            start_window = now_datetime - timedelta(days=delta_days)
         elif delta_days >= 365:
             delta_days = 365
             LOGGER.warning("WARNING: Start date or bookmark greater than 1 year maxiumum.")
             LOGGER.warning("WARNING: Setting bookmark start to 1 year ago.")
+            start_window = now_datetime - timedelta(days=delta_days)
+        else:
+            start_window = last_dttm
 
-        start_window = now_datetime - timedelta(days=delta_days)
         end_window = start_window + timedelta(days=days_interval)
         end_window = min(end_window, now_datetime)
-
     else:
         start_window = strptime_to_utc(last_datetime)
         end_window = now_datetime
@@ -214,7 +225,14 @@ def sync_endpoint(client, #pylint: disable=too-many-branches
             # Request dates need to be normalized to project timezone or else errors may occur
             # Errors occur when from_date is > 365 days ago
             #   and when to_date > today (in project timezone)
-            from_date = '{}'.format(start_window.astimezone(tzone))[0:10]
+            if bookmark_where_query_field:
+                # Add attribution window before start of date window to include late arrivals
+                attribution_start_window = start_window - timedelta(days=attribution_window)
+            else:
+                # Attribution window already taken into account for initial start_date
+                attribution_start_window = start_window
+
+            from_date = '{}'.format(attribution_start_window.astimezone(tzone))[0:10]
             to_date = '{}'.format(end_window.astimezone(tzone))[0:10]
             LOGGER.info('START Sync for Stream: {}{}'.format(
                 stream_name,
@@ -262,19 +280,34 @@ def sync_endpoint(client, #pylint: disable=too-many-branches
                     params['session_id'] = session_id
                     params['page'] = page
 
-                # querystring: Squash query params into string and replace [parent_id]
-                querystring = '&'.join(['%s=%s' % (key, value) for (key, value) \
-                    in params.items()]).replace(
-                        '[parent_id]', str(parent_id))
-
                 if stream_name == 'export' and export_events:
                     event = json.dumps([export_events] if isinstance(export_events, str) else export_events)
                     url_encoded = urllib.parse.quote(event)
-                    querystring += f'&event={url_encoded}'
+                    params['event'] = url_encoded
 
-                if stream_name == 'export' and where:
-                    url_encoded = urllib.parse.quote(where)
-                    querystring += f'&where={url_encoded}'
+                if where_filter_supported:
+                    where_filter = [f'({where})'] if where else []
+                    start_window_utc_timestamp_ms = int(
+                        math.floor(start_window.astimezone(pytz.UTC).timestamp()*1000.0))
+                    end_window_utc_timestamp_ms = int(
+                        math.floor(end_window.astimezone(pytz.UTC).timestamp()*1000.0))
+                    if bookmark_where_query_field:
+                        bookmark_start_filter = (
+                            f'properties["{bookmark_where_query_field}"] >= {start_window_utc_timestamp_ms}')
+                        bookmark_end_filter = (
+                            f'properties["{bookmark_where_query_field}"] <= {end_window_utc_timestamp_ms}')
+                        bookmark_where = [bookmark_start_filter, bookmark_end_filter]
+                    else:
+                        bookmark_where = []
+
+                    full_where_query = ' and '.join(where_filter + bookmark_where)
+                    if full_where_query:
+                        params['where'] = urllib.parse.quote(full_where_query)
+
+                # querystring: Squash query params into string and replace [parent_id]
+                querystring = '&'.join([f'{key}={value}' for (key, value) \
+                    in params.items()]).replace(
+                        '[parent_id]', str(parent_id))
 
                 full_url = '{}/{}{}'.format(
                     url,
